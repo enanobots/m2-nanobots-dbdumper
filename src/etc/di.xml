@@ -79,7 +79,7 @@
         </arguments>
     </type>
 
-    <type name="Nanobots\DbDumper\Model\DumpInterface">
+    <type name="Nanobots\DbDumper\Export\DumpInterface">
         <arguments>
             <argument name="exportModels" xsi:type="array">
                 <item name="cms" xsi:type="object">cmsExport</item>
