@@ -53,20 +53,20 @@ class Dump implements DumpInterface
 
     /**
      * @param \Nanobots\DbDumper\Sql\Connection $connection
-     * @param \Nanobots\DbDumper\Export\TableGroupInterface[] $tableGroups
      * @param \Nanobots\DbDumper\Export\TableExportInterface $tableExport
      * @param \Nanobots\DbDumper\Helper\FileWriter $fileWriter
      * @param \Psr\Log\LoggerInterface $logger
+     * @param \Nanobots\DbDumper\Export\TableGroupInterface[] $tableGroups
      * @param \Nanobots\DbDumper\Export\ExportModelInterface[] $exportModels
      * @param array $initStatements
      * @param array $finalStatements
      */
     public function __construct(
         Connection $connection,
-        array $tableGroups,
         TableExportInterface $tableExport,
         FileWriter $fileWriter,
         LoggerInterface $logger,
+        array $tableGroups = [],
         array $exportModels = [],
         array $initStatements = [],
         array $finalStatements = []

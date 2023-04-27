@@ -40,7 +40,7 @@ class TableGroup implements TableGroupInterface
         FileWriter $fileWriter,
         array $filters = [],
         array $tableList = [],
-        string $groupExportMode = TableGroupInterface::GROUP_EXPORT_DEFAULT_MODE,
+        string $groupExportMode = TableGroupInterface::GROUP_EXPORT_DEFAULT_MODE
     ) {
         $this->fileWriter = $fileWriter;
         $this->tableList = $tableList;
