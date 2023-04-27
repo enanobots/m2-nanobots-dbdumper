@@ -27,7 +27,7 @@ class Name implements DataFakerInterface
      */
     public function __construct(
         Firstname $firstname,
-        Lastname $lastname,
+        Lastname $lastname
     ) {
         $this->firstname = $firstname;
         $this->lastname = $lastname;
