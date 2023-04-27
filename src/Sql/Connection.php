@@ -70,7 +70,7 @@ class Connection
      * @param  mixed $bind An array of data or data itself to bind to the placeholders.
      * @return \Zend_Db_Statement_Interface
      */
-    public function query(mixed $sql, array $bind = []): \Zend_Db_Statement_Interface
+    public function query($sql, array $bind = []): \Zend_Db_Statement_Interface
     {
         try {
             return $this->connection->query($sql, $bind);
