@@ -1,0 +1,29 @@
+{
+    "name": "enanobots/m2-dbdumper",
+    "description": "Magento 2 Data Patch creator",
+    "homepage": "https://github.com/enanobots/m2-nanobots-dbdumper",
+    "type": "magento2-module",
+    "license": "MIT",
+    "authors": [
+        {
+            "email": "nanobotsecommerce@gmail.com",
+            "name": "eCommerce Nanobots"
+        },
+        {
+            "name": "Jakub Winkler",
+            "email": "jwinkler@qsolutionsstudio.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "php": ">=7.4"
+    },
+    "autoload": {
+        "files": [
+            "src/registration.php"
+        ],
+        "psr-4": {
+            "Nanobots\\DbDumper\\": "src/"
+        }
+    }
+}

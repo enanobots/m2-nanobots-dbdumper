@@ -1,0 +1,664 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+/**
+ * Copyright © Q-Solutions Studio: eCommerce Nanobots. All rights reserved.
+ *
+ * @category    Nanobots
+ * @package     Nanobots_DbDumper
+ * @author      Jakub Winkler <jwinkler@qsolutionsstudio.com>
+ */
+ -->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <preference for="Nanobots\DbDumper\Export\DumpInterface" type="Nanobots\DbDumper\Model\Dump"/>
+    <preference for="Nanobots\DbDumper\Export\TableGroupInterface" type="Nanobots\DbDumper\Model\TableGroup"/>
+    <preference for="Nanobots\DbDumper\Export\TableExportInterface" type="Nanobots\DbDumper\Model\TableExport"/>
+
+    <type name="Magento\Framework\Console\CommandListInterface">
+        <arguments>
+            <argument name="commands" xsi:type="array">
+                <item name="nanobots:dbdump" xsi:type="object">Nanobots\DbDumper\Console\Command\DumpDatabase</item>
+            </argument>
+        </arguments>
+    </type>
+
+    <virtualType name="Nanobots\DbDumper\Model\DebugLog" type="Magento\Framework\Logger\Handler\Base">
+        <arguments>
+            <argument name="fileName" xsi:type="string">/var/log/dbdump.log</argument>
+        </arguments>
+    </virtualType>
+
+    <virtualType name="Nanobots\DbDumper\Model\Logger" type="Magento\Framework\Logger\Monolog">
+        <arguments>
+            <argument name="handlers" xsi:type="array">
+                <item name="debug" xsi:type="object">Nanobots\DbDumper\Model\DebugLog</item>
+            </argument>
+        </arguments>
+    </virtualType>
+
+    <type name="Nanobots\DbDumper\Export\TableExportInterface">
+        <arguments>
+            <argument name="logger" xsi:type="object">Nanobots\DbDumper\Model\Logger</argument>
+            <argument name="createTableModifiers" xsi:type="array">
+                <item name="nullDate" xsi:type="object">Nanobots\DbDumper\Model\SqlModifiers\NullDateModifier\Proxy</item>
+                <item name="utf8mb3Update" xsi:type="object">Nanobots\DbDumper\Model\SqlModifiers\Utf8mb3Modifier\Proxy</item>
+            </argument>
+            <argument name="restrictedColumns" xsi:type="array">
+                <item name="customer_dob" xsi:type="object">Nanobots\DbDumper\Model\DataFakers\Dob\Proxy</item>
+                <item name="customer_email" xsi:type="object">Nanobots\DbDumper\Model\DataFakers\Email\Proxy</item>
+                <item name="customer_firstname" xsi:type="object">Nanobots\DbDumper\Model\DataFakers\Firstname\Proxy</item>
+                <item name="customer_lastname" xsi:type="object">Nanobots\DbDumper\Model\DataFakers\Lastname\Proxy</item>
+                <item name="customer_middlename" xsi:type="object">Nanobots\DbDumper\Model\DataFakers\Middlename\Proxy</item>
+                <item name="city" xsi:type="object">Nanobots\DbDumper\Model\DataFakers\City\Proxy</item>
+                <item name="dob" xsi:type="object">Nanobots\DbDumper\Model\DataFakers\Dob\Proxy</item>
+                <item name="email" xsi:type="object">Nanobots\DbDumper\Model\DataFakers\Email\Proxy</item>
+                <item name="fax" xsi:type="object">Nanobots\DbDumper\Model\DataFakers\Fax\Proxy</item>
+                <item name="firstname" xsi:type="object">\Nanobots\DbDumper\Model\DataFakers\Firstname\Proxy</item>
+                <item name="lastname" xsi:type="object">Nanobots\DbDumper\Model\DataFakers\Lastname\Proxy</item>
+                <item name="middlename" xsi:type="object">Nanobots\DbDumper\Model\DataFakers\Middlename\Proxy</item>
+                <item name="name" xsi:type="object">Nanobots\DbDumper\Model\DataFakers\Name\Proxy</item>
+                <item name="password" xsi:type="object">Nanobots\DbDumper\Model\DataFakers\PasswordHash\Proxy</item>
+                <item name="password_hash" xsi:type="object">Nanobots\DbDumper\Model\DataFakers\PasswordHash\Proxy</item>
+                <item name="postcode" xsi:type="object">Nanobots\DbDumper\Model\DataFakers\Postcode\Proxy</item>
+                <item name="street" xsi:type="object">Nanobots\DbDumper\Model\DataFakers\Street\Proxy</item>
+                <item name="telephone" xsi:type="object">Nanobots\DbDumper\Model\DataFakers\Telephone\Proxy</item>
+            </argument>
+            <argument name="tableFilters" xsi:type="array">
+                <item name="catalog_product_entity" xsi:type="array">
+                    <item name="limit" xsi:type="object">Nanobots\DbDumper\Sql\Filters\ProductLimitFilter\Proxy</item>
+                    <item name="modulo" xsi:type="object">Nanobots\DbDumper\Sql\Filters\ProductModuloFilter\Proxy</item>
+                </item>
+            </argument>
+        </arguments>
+    </type>
+
+    <type name="Nanobots\DbDumper\Model\DataFakers\Email">
+        <arguments>
+            <argument name="emailSchema" xsi:type="string"><![CDATA[{{firstname}}.{{lastname}}]]></argument>
+            <argument name="emailDomain" xsi:type="string"><![CDATA[nanobots.info]]></argument>
+        </arguments>
+    </type>
+
+    <type name="Nanobots\DbDumper\Model\DumpInterface">
+        <arguments>
+            <argument name="exportModels" xsi:type="array">
+                <item name="cms" xsi:type="object">cmsExport</item>
+                <item name="custom" xsi:type="object">customExportMode</item>
+                <item name="default" xsi:type="object">defaultExportMode</item>
+                <item name="full" xsi:type="object">fullExportMode</item>
+            </argument>
+
+            <argument name="logger" xsi:type="object">Nanobots\DbDumper\Model\Logger</argument>
+            <argument name="tableGroups" xsi:type="array">
+                <item name="admin_user" xsi:type="object">admin_user</item>
+                <item name="core" xsi:type="object">core</item>
+                <item name="cms" xsi:type="object">cms</item>
+                <item name="productTables" xsi:type="object">productTables</item>
+                <item name="customer" xsi:type="object">customer</item>
+                <item name="empty" xsi:type="object">empty</item>
+                <item name="views" xsi:type="object">views</item>
+            </argument>
+
+            <argument name="initStatements" xsi:type="array">
+                <item name="init" xsi:type="string"><![CDATA[------------- MySQL Dump Using Nanobots DbDumper --------------]]></item>
+                <item name="utf8" xsi:type="string"><![CDATA[SET NAMES utf8;]]></item>
+                <item name="characterSet" xsi:type="string"><![CDATA[/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;]]></item>
+                <item name="characterResults" xsi:type="string"><![CDATA[/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;]]></item>
+                <item name="collation" xsi:type="string"><![CDATA[/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;]]></item>
+                <item name="timezone1" xsi:type="string"><![CDATA[/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;]]></item>
+                <item name="timezone2" xsi:type="string"><![CDATA[/*!40103 SET TIME_ZONE='+00:00' */;]]></item>
+                <item name="disableUniqueChecks" xsi:type="string"><![CDATA[/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;]]></item>
+                <item name="disableForeignKeys" xsi:type="string"><![CDATA[/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;]]></item>
+                <item name="allow0forAutoIncrements" xsi:type="string"><![CDATA[/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;]]></item>
+                <item name="disableWarnings" xsi:type="string"><![CDATA[/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;]]></item>
+            </argument>
+
+            <!-- reset updates -->
+            <argument name="finalStatements" xsi:type="array">
+                <!-- setting indexes on save to user needs to recreate triggers manually -->
+                <item name="mview_state" xsi:type="string"><![CDATA[UPDATE `{table}` SET `version_id` = 0, `mode`="disabled", `status`="idle";]]></item>
+                <item name="indexer_state" xsi:type="string"><![CDATA[UPDATE `{table}` SET `status` = "valid";]]></item>
+                <item name="enableForeignKeys" xsi:type="string"><![CDATA[SET FOREIGN_KEY_CHECKS = 1;]]></item>
+                <item name="final" xsi:type="string"><![CDATA[------------- MySQL Dump Using Nanobots DbDumper --------------]]></item>
+            </argument>
+        </arguments>
+    </type>
+
+    <!-- database export modes -->
+    <virtualType name="defaultExportMode" type="Nanobots\DbDumper\Model\ExportModel">
+        <arguments>
+            <argument name="exportModeDescription" xsi:type="string">default</argument>
+            <argument name="applyFilters" xsi:type="boolean">false</argument>
+            <argument name="exportTypeForAllTables" xsi:type="number">2</argument> <!-- dump all data -->
+        </arguments>
+    </virtualType>
+
+    <virtualType name="fullExportMode" type="Nanobots\DbDumper\Model\ExportModel">
+        <arguments>
+            <argument name="exportModeDescription" xsi:type="string">Dropping entire database</argument>
+            <argument name="applyFilters" xsi:type="boolean">false</argument>
+            <argument name="exportTypeForAllTables" xsi:type="number">1</argument>
+        </arguments>
+    </virtualType>
+
+    <virtualType name="customExportMode" type="Nanobots\DbDumper\Model\ExportModel">
+        <arguments>
+            <argument name="exportModeDescription" xsi:type="string">Custom dump with filters</argument>
+            <argument name="applyFilters" xsi:type="boolean">true</argument>
+            <argument name="exportTypeForAllTables" xsi:type="number">0</argument> <!-- ask what to do -->
+        </arguments>
+    </virtualType>
+
+    <virtualType name="cmsExport" type="Nanobots\DbDumper\Model\ExportModel">
+        <arguments>
+            <argument name="exportModeDescription" xsi:type="string">Only CMS data</argument>
+            <argument name="applyFilters" xsi:type="boolean">false</argument>
+            <argument name="tableGroups" xsi:type="array">
+                <item name="cms" xsi:type="object">cms</item>
+            </argument>
+        </arguments>
+    </virtualType>
+
+    <!-- database groups start here -->
+    <virtualType name="admin_user" type="Nanobots\DbDumper\Model\TableGroup">
+        <arguments>
+            <argument name="tableList" xsi:type="array">
+                <item name="admin_user" xsi:type="null"/>
+                <item name="admin_passwords" xsi:type="null"/>
+            </argument>
+            <argument name="groupExportMode" xsi:type="string">anonymize</argument>
+        </arguments>
+    </virtualType>
+
+    <!-- used as en example to dump custom tables -->
+    <virtualType name="cms" type="Nanobots\DbDumper\Model\TableGroup">
+        <arguments>
+            <argument name="tableList" xsi:type="array">
+                <item name="cms_block" xsi:type="null"/>
+                <item name="cms_block_store" xsi:type="null"/>
+                <item name="cms_page" xsi:type="null"/>
+                <item name="cms_page_store" xsi:type="null"/>
+            </argument>
+        </arguments>
+    </virtualType>
+
+    <!-- database groups start here -->
+    <virtualType name="customer" type="Nanobots\DbDumper\Model\TableGroup">
+        <arguments>
+            <argument name="tableList" xsi:type="array">
+                <item name="customer_entity" xsi:type="null"/>
+                <item name="customer_entity_datetime" xsi:type="null"/>
+                <item name="customer_entity_decimal" xsi:type="null"/>
+                <item name="customer_entity_int" xsi:type="null"/>
+                <item name="customer_entity_text" xsi:type="null"/>
+                <item name="customer_entity_varchar" xsi:type="null"/>
+                <item name="customer_form_attribute" xsi:type="null"/>
+                <item name="customer_grid_flat" xsi:type="null"/>
+                <item name="customer_visitor" xsi:type="null"/>
+                <item name="customer_address_entity" xsi:type="null"/>
+                <item name="customer_address_entity_datetime" xsi:type="null"/>
+                <item name="customer_address_entity_decimal" xsi:type="null"/>
+                <item name="customer_address_entity_int" xsi:type="null"/>
+                <item name="customer_address_entity_text" xsi:type="null"/>
+                <item name="customer_address_entity_varchar" xsi:type="null"/>
+            </argument>
+            <argument name="groupExportMode" xsi:type="string">anonymize</argument>
+        </arguments>
+    </virtualType>
+
+    <virtualType name="core" type="Nanobots\DbDumper\Model\TableGroup">
+        <arguments>
+            <argument name="tableList" xsi:type="array">
+                <item name="admin_system_messages" xsi:type="null"/>
+                <item name="admin_user_expiration" xsi:type="null"/>
+                <item name="admin_user_session" xsi:type="null"/>
+                <item name="adminnotification_inbox" xsi:type="null"/>
+                <item name="authorization_role" xsi:type="null"/>
+                <item name="authorization_rule" xsi:type="null"/>
+                <item name="catalog_category_entity" xsi:type="null"/>
+                <item name="catalog_category_entity_datetime" xsi:type="null"/>
+                <item name="catalog_category_entity_decimal" xsi:type="null"/>
+                <item name="catalog_category_entity_int" xsi:type="null"/>
+                <item name="catalog_category_entity_text" xsi:type="null"/>
+                <item name="catalog_category_entity_varchar" xsi:type="null"/>
+                <item name="catalog_eav_attribute" xsi:type="null"/>
+                <item name="cataloginventory_stock" xsi:type="null"/>
+                <item name="catalogrule" xsi:type="null"/>
+                <item name="catalogrule_customer_group" xsi:type="null"/>
+                <item name="catalogrule_group_website" xsi:type="null"/>
+                <item name="catalogrule_website" xsi:type="null"/>
+                <item name="checkout_agreement" xsi:type="null"/>
+                <item name="checkout_agreement_store" xsi:type="null"/>
+                <item name="core_config_data" xsi:type="null"/>
+                <item name="customer_eav_attribute" xsi:type="null"/>
+                <item name="customer_eav_attribute_website" xsi:type="null"/>
+                <item name="customer_group" xsi:type="null"/>
+                <item name="customer_group_excluded_website" xsi:type="null"/>
+                <item name="design_change" xsi:type="null"/>
+                <item name="design_config_grid_flat" xsi:type="null"/>
+                <item name="directory_country" xsi:type="null"/>
+                <item name="directory_country_format" xsi:type="null"/>
+                <item name="directory_country_region" xsi:type="null"/>
+                <item name="directory_country_region_name" xsi:type="null"/>
+                <item name="directory_currency_rate" xsi:type="null"/>
+                <item name="downloadable_link" xsi:type="null"/>
+                <item name="downloadable_link_price" xsi:type="null"/>
+                <item name="downloadable_link_purchased" xsi:type="null"/>
+                <item name="downloadable_link_purchased_item" xsi:type="null"/>
+                <item name="downloadable_link_title" xsi:type="null"/>
+                <item name="downloadable_sample" xsi:type="null"/>
+                <item name="downloadable_sample_title" xsi:type="null"/>
+                <item name="eav_attribute" xsi:type="null"/>
+                <item name="eav_attribute_group" xsi:type="null"/>
+                <item name="eav_attribute_label" xsi:type="null"/>
+                <item name="eav_attribute_option" xsi:type="null"/>
+                <item name="eav_attribute_option_swatch" xsi:type="null"/>
+                <item name="eav_attribute_option_value" xsi:type="null"/>
+                <item name="eav_attribute_set" xsi:type="null"/>
+                <item name="eav_entity" xsi:type="null"/>
+                <item name="eav_entity_attribute" xsi:type="null"/>
+                <item name="eav_entity_datetime" xsi:type="null"/>
+                <item name="eav_entity_decimal" xsi:type="null"/>
+                <item name="eav_entity_int" xsi:type="null"/>
+                <item name="eav_entity_store" xsi:type="null"/>
+                <item name="eav_entity_text" xsi:type="null"/>
+                <item name="eav_entity_type" xsi:type="null"/>
+                <item name="eav_entity_varchar" xsi:type="null"/>
+                <item name="eav_form_element" xsi:type="null"/>
+                <item name="eav_form_fieldset" xsi:type="null"/>
+                <item name="eav_form_fieldset_label" xsi:type="null"/>
+                <item name="eav_form_type" xsi:type="null"/>
+                <item name="eav_form_type_entity" xsi:type="null"/>
+                <item name="email_template" xsi:type="null"/>
+                <item name="flag" xsi:type="null"/>
+                <item name="googleoptimizer_code" xsi:type="null"/>
+                <item name="import_history" xsi:type="null"/>
+                <item name="indexer_state" xsi:type="null"/>
+                <item name="integration" xsi:type="null"/>
+                <item name="inventory_geoname" xsi:type="null"/>
+                <item name="inventory_low_stock_notification_configuration" xsi:type="null"/>
+                <item name="inventory_order_notification" xsi:type="null"/>
+                <item name="inventory_pickup_location_order" xsi:type="null"/>
+                <item name="inventory_pickup_location_quote_address" xsi:type="null"/>
+                <item name="inventory_reservation" xsi:type="null"/>
+                <item name="inventory_shipment_source" xsi:type="null"/>
+                <item name="inventory_source" xsi:type="null"/>
+                <item name="inventory_source_carrier_link" xsi:type="null"/>
+                <item name="inventory_source_item" xsi:type="null"/>
+                <item name="inventory_source_stock_link" xsi:type="null"/>
+                <item name="inventory_stock" xsi:type="null"/>
+                <item name="inventory_stock_sales_channel" xsi:type="null"/>
+                <item name="layout_link" xsi:type="null"/>
+                <item name="layout_update" xsi:type="null"/>
+                <item name="media_content_asset" xsi:type="null"/>
+                <item name="media_gallery_asset" xsi:type="null"/>
+                <item name="media_gallery_asset_keyword" xsi:type="null"/>
+                <item name="media_gallery_keyword" xsi:type="null"/>
+                <item name="mview_state" xsi:type="null"/>
+                <item name="pagebuilder_template" xsi:type="null"/>
+                <item name="patch_list" xsi:type="null"/>
+                <item name="rating" xsi:type="null"/>
+                <item name="rating_entity" xsi:type="null"/>
+                <item name="rating_option" xsi:type="null"/>
+                <item name="rating_option_vote" xsi:type="null"/>
+                <item name="rating_option_vote_aggregated" xsi:type="null"/>
+                <item name="rating_store" xsi:type="null"/>
+                <item name="rating_title" xsi:type="null"/>
+                <item name="report_event_types" xsi:type="null"/>
+                <item name="review_entity" xsi:type="null"/>
+                <item name="review_status" xsi:type="null"/>
+                <item name="setup_module" xsi:type="null"/>
+                <item name="shipping_tablerate" xsi:type="null"/>
+                <item name="sitemap" xsi:type="null"/>
+                <item name="store" xsi:type="null"/>
+                <item name="store_group" xsi:type="null"/>
+                <item name="store_website" xsi:type="null"/>
+                <item name="tax_calculation" xsi:type="null"/>
+                <item name="tax_calculation_rate" xsi:type="null"/>
+                <item name="tax_calculation_rate_title" xsi:type="null"/>
+                <item name="tax_calculation_rule" xsi:type="null"/>
+                <item name="tax_class" xsi:type="null"/>
+                <item name="tax_order_aggregated_created" xsi:type="null"/>
+                <item name="tax_order_aggregated_updated" xsi:type="null"/>
+                <item name="theme" xsi:type="null"/>
+                <item name="theme_file" xsi:type="null"/>
+                <item name="translation" xsi:type="null"/>
+                <item name="url_rewrite" xsi:type="null"/>
+                <item name="variable" xsi:type="null"/>
+                <item name="variable_value" xsi:type="null"/>
+                <item name="weee_tax" xsi:type="null"/>
+                <item name="widget" xsi:type="null"/>
+                <item name="widget_instance" xsi:type="null"/>
+                <item name="widget_instance_page" xsi:type="null"/>
+                <item name="widget_instance_page_layout" xsi:type="null"/>
+            </argument>
+        </arguments>
+    </virtualType>
+
+    <!-- we can keep these tables empty -->
+    <virtualType name="empty" type="Nanobots\DbDumper\Model\TableGroup">
+        <arguments>
+            <argument name="tableList" xsi:type="array">
+                <item name="%_idx" xsi:type="null"/>
+                <item name="%_log" xsi:type="null"/>
+                <item name="%_cl" xsi:type="null"/>
+                <item name="%_tmp" xsi:type="null"/>
+                <item name="%_replica" xsi:type="null"/>
+                <item name="admin_adobe_ims_webapi" xsi:type="null"/>
+                <item name="adobe_stock_asset" xsi:type="null"/>
+                <item name="adobe_stock_category" xsi:type="null"/>
+                <item name="adobe_stock_creator" xsi:type="null"/>
+                <item name="adobe_user_profile" xsi:type="null"/>
+                <item name="braintree_credit_prices" xsi:type="null"/>
+                <item name="braintree_transaction_details" xsi:type="null"/>
+                <item name="cache" xsi:type="null"/>
+                <item name="cache_tag" xsi:type="null"/>
+                <item name="catalog_compare_item" xsi:type="null"/>
+                <item name="catalog_compare_list" xsi:type="null"/>
+                <item name="catalogsearch_recommendations" xsi:type="null"/>
+                <item name="cron_schedule" xsi:type="null"/>
+                <item name="gift_message" xsi:type="null"/>
+                <item name="importexport_importdata" xsi:type="null"/>
+                <item name="jwt_auth_revoked" xsi:type="null"/>
+                <item name="login_as_customer" xsi:type="null"/>
+                <item name="login_as_customer_assistance_allowed" xsi:type="null"/>
+                <item name="magento_acknowledged_bulk" xsi:type="null"/>
+                <item name="magento_bulk" xsi:type="null"/>
+                <item name="magento_operation" xsi:type="null"/>
+                <item name="newsletter_problem" xsi:type="null"/>
+                <item name="newsletter_queue" xsi:type="null"/>
+                <item name="newsletter_queue_link" xsi:type="null"/>
+                <item name="newsletter_queue_store_link" xsi:type="null"/>
+                <item name="newsletter_subscriber" xsi:type="null"/>
+                <item name="newsletter_template" xsi:type="null"/>
+                <item name="oauth_consumer" xsi:type="null"/>
+                <item name="oauth_nonce" xsi:type="null"/>
+                <item name="oauth_token" xsi:type="null"/>
+                <item name="password_reset_request_event" xsi:type="null"/>
+                <item name="paypal_billing_agreement" xsi:type="null"/>
+                <item name="paypal_billing_agreement_order" xsi:type="null"/>
+                <item name="paypal_cert" xsi:type="null"/>
+                <item name="paypal_payment_transaction" xsi:type="null"/>
+                <item name="paypal_settlement_report" xsi:type="null"/>
+                <item name="paypal_settlement_report_row" xsi:type="null"/>
+                <item name="persistent_session" xsi:type="null"/>
+                <item name="product_alert_price" xsi:type="null"/>
+                <item name="product_alert_stock" xsi:type="null"/>
+                <item name="queue" xsi:type="null"/>
+                <item name="queue_lock" xsi:type="null"/>
+                <item name="queue_message" xsi:type="null"/>
+                <item name="queue_message_status" xsi:type="null"/>
+                <item name="queue_poison_pill" xsi:type="null"/>
+                <item name="quote" xsi:type="null"/>
+                <item name="quote_address" xsi:type="null"/>
+                <item name="quote_address_item" xsi:type="null"/>
+                <item name="quote_id_mask" xsi:type="null"/>
+                <item name="quote_item" xsi:type="null"/>
+                <item name="quote_item_option" xsi:type="null"/>
+                <item name="quote_payment" xsi:type="null"/>
+                <item name="quote_shipping_rate" xsi:type="null"/>
+                <item name="report_compared_product_index" xsi:type="null"/>
+                <item name="report_event" xsi:type="null"/>
+                <item name="report_viewed_product_aggregated_daily" xsi:type="null"/>
+                <item name="report_viewed_product_aggregated_monthly" xsi:type="null"/>
+                <item name="report_viewed_product_aggregated_yearly" xsi:type="null"/>
+                <item name="report_viewed_product_index" xsi:type="null"/>
+                <item name="reporting_counts" xsi:type="null"/>
+                <item name="reporting_module_status" xsi:type="null"/>
+                <item name="reporting_orders" xsi:type="null"/>
+                <item name="reporting_system_updates" xsi:type="null"/>
+                <item name="reporting_users" xsi:type="null"/>
+                <item name="review" xsi:type="null"/>
+                <item name="review_detail" xsi:type="null"/>
+                <item name="review_entity_summary" xsi:type="null"/>
+                <item name="review_store" xsi:type="null"/>
+                <item name="sales_bestsellers_aggregated_daily" xsi:type="null"/>
+                <item name="sales_bestsellers_aggregated_monthly" xsi:type="null"/>
+                <item name="sales_bestsellers_aggregated_yearly" xsi:type="null"/>
+                <item name="sales_creditmemo" xsi:type="null"/>
+                <item name="sales_creditmemo_comment" xsi:type="null"/>
+                <item name="sales_creditmemo_grid" xsi:type="null"/>
+                <item name="sales_creditmemo_item" xsi:type="null"/>
+                <item name="sales_invoice" xsi:type="null"/>
+                <item name="sales_invoice_comment" xsi:type="null"/>
+                <item name="sales_invoice_grid" xsi:type="null"/>
+                <item name="sales_invoice_item" xsi:type="null"/>
+                <item name="sales_invoiced_aggregated" xsi:type="null"/>
+                <item name="sales_invoiced_aggregated_order" xsi:type="null"/>
+                <item name="sales_order" xsi:type="null"/>
+                <item name="sales_order_address" xsi:type="null"/>
+                <item name="sales_order_aggregated_created" xsi:type="null"/>
+                <item name="sales_order_aggregated_updated" xsi:type="null"/>
+                <item name="sales_order_grid" xsi:type="null"/>
+                <item name="sales_order_item" xsi:type="null"/>
+                <item name="sales_order_payment" xsi:type="null"/>
+                <item name="sales_order_status" xsi:type="null"/>
+                <item name="sales_order_status_history" xsi:type="null"/>
+                <item name="sales_order_status_label" xsi:type="null"/>
+                <item name="sales_order_status_state" xsi:type="null"/>
+                <item name="sales_order_tax" xsi:type="null"/>
+                <item name="sales_order_tax_item" xsi:type="null"/>
+                <item name="sales_payment_transaction" xsi:type="null"/>
+                <item name="sales_refunded_aggregated" xsi:type="null"/>
+                <item name="sales_refunded_aggregated_order" xsi:type="null"/>
+                <item name="sequence_creditmemo_%" xsi:type="null"/>
+                <item name="sequence_invoice_%" xsi:type="null"/>
+                <item name="sequence_order_%" xsi:type="null"/>
+                <item name="sequence_shipment_%" xsi:type="null"/>
+                <item name="sales_sequence_meta" xsi:type="null"/>
+                <item name="sales_sequence_profile" xsi:type="null"/>
+                <item name="sales_shipment" xsi:type="null"/>
+                <item name="sales_shipment_comment" xsi:type="null"/>
+                <item name="sales_shipment_grid" xsi:type="null"/>
+                <item name="sales_shipment_item" xsi:type="null"/>
+                <item name="sales_shipment_track" xsi:type="null"/>
+                <item name="sales_shipping_aggregated" xsi:type="null"/>
+                <item name="sales_shipping_aggregated_order" xsi:type="null"/>
+                <item name="salesrule" xsi:type="null"/>
+                <item name="salesrule_coupon" xsi:type="null"/>
+                <item name="salesrule_coupon_aggregated" xsi:type="null"/>
+                <item name="salesrule_coupon_aggregated_order" xsi:type="null"/>
+                <item name="salesrule_coupon_aggregated_updated" xsi:type="null"/>
+                <item name="salesrule_coupon_usage" xsi:type="null"/>
+                <item name="salesrule_customer" xsi:type="null"/>
+                <item name="salesrule_customer_group" xsi:type="null"/>
+                <item name="salesrule_label" xsi:type="null"/>
+                <item name="salesrule_product_attribute" xsi:type="null"/>
+                <item name="salesrule_website" xsi:type="null"/>
+                <item name="search_query" xsi:type="null"/>
+                <item name="search_synonyms" xsi:type="null"/>
+                <item name="session" xsi:type="null"/>
+                <item name="ui_bookmark" xsi:type="null"/>
+                <item name="vault_payment_token" xsi:type="null"/>
+                <item name="vault_payment_token_order_payment_link" xsi:type="null"/>
+                <item name="wishlist" xsi:type="null"/>
+                <item name="wishlist_item" xsi:type="null"/>
+                <item name="wishlist_item_option" xsi:type="null"/>
+            </argument>
+            <argument name="groupExportMode" xsi:type="string">redundant</argument>
+        </arguments>
+    </virtualType>
+
+    <virtualType name="views" type="Nanobots\DbDumper\Model\TableGroup">
+        <arguments>
+            <argument name="tableList" xsi:type="array">
+                <item name="inventory_stock_%" xsi:type="null"/>
+            </argument>
+        </arguments>
+    </virtualType>
+
+       <!-- advanced catalog limited to make sure we don't copy data we don't need -->
+    <virtualType name="productTables" type="Nanobots\DbDumper\Model\TableGroup">
+        <arguments>
+            <argument name="tableList" xsi:type="array">
+                <item name="catalog_product_entity" xsi:type="array">
+                    <item name="field" xsi:type="string">entity_id</item>
+                    <item name="related_tables" xsi:type="array">
+                        <item name="catalog_product_entity_datetime" xsi:type="null"/>
+                        <item name="catalog_product_entity_decimal" xsi:type="null"/>
+                        <item name="catalog_product_entity_gallery" xsi:type="null"/>
+                        <item name="catalog_product_entity_int" xsi:type="null"/>
+                        <item name="catalog_product_entity_text" xsi:type="null"/>
+                        <item name="catalog_product_entity_tier_price" xsi:type="null"/>
+                        <item name="catalog_product_entity_varchar" xsi:type="null"/>
+
+                        <item name="catalog_product_entity_media_gallery_value_to_entity" xsi:type="array">
+                            <item name="field" xsi:type="string">value_id</item>
+                            <item name="related_tables" xsi:type="array">
+                                <item name="catalog_product_entity_media_gallery" xsi:type="array">
+                                    <item name="field" xsi:type="string">value_id</item>
+                                    <item name="related_tables" xsi:type="array">
+                                        <item name="catalog_product_entity_media_gallery_value" xsi:type="null"/>
+                                        <item name="catalog_product_entity_media_gallery_value_video" xsi:type="null"/>
+                                    </item>
+                                </item>
+                            </item>
+                        </item>
+
+                        <item name="catalog_product_option" xsi:type="array">
+                            <item name="parent_columns" xsi:type="array">
+                                <item name="product_id" xsi:type="null"/>
+                            </item>
+                            <item name="field" xsi:type="string">option_id</item>
+                            <item name="related_tables" xsi:type="array">
+                                <item name="catalog_product_option_price" xsi:type="null"/>
+                                <item name="catalog_product_option_title" xsi:type="null"/>
+                                <item name="catalog_product_option_type_price" xsi:type="null"/>
+                                <item name="catalog_product_option_type_title" xsi:type="null"/>
+                                <item name="catalog_product_option_type_value" xsi:type="null"/>
+                            </item>
+                        </item>
+
+                        <item name="catalog_product_bundle_option" xsi:type="array">
+                            <item name="parent_columns" xsi:type="array">
+                                <item name="parent_id" xsi:type="null"/>
+                            </item>
+                            <item name="field" xsi:type="string">option_id</item>
+                            <item name="related_tables" xsi:type="array">
+                                <item name="catalog_product_bundle_option_value" xsi:type="null"/>
+                            </item>
+                        </item>
+
+                        <item name="catalog_product_bundle_selection" xsi:type="array">
+                            <item name="parent_columns" xsi:type="array">
+                                <item name="parent_product_id" xsi:type="null"/>
+                                <item name="product_id" xsi:type="null"/>
+                            </item>
+                        </item>
+
+                        <item name="catalog_product_bundle_selection_price" xsi:type="array">
+                            <item name="parent_columns" xsi:type="array">
+                                <item name="parent_product_id" xsi:type="null"/>
+                            </item>
+                        </item>
+
+                        <item name="catalog_product_frontend_action" xsi:type="array">
+                            <item name="parent_columns" xsi:type="array">
+                                <item name="product_id" xsi:type="null"/>
+                            </item>
+                        </item>
+
+                        <item name="catalog_product_index_eav" xsi:type="null"/>
+                        <item name="catalog_product_index_eav_decimal" xsi:type="null"/>
+                        <item name="catalog_product_index_price" xsi:type="null"/>
+                        <item name="catalog_product_index_tier_price" xsi:type="null"/>
+
+                        <item name="catalog_product_link" xsi:type="array">
+                            <item name="parent_columns" xsi:type="array">
+                                <item name="product_id" xsi:type="null"/>
+                                <item name="linked_product_id" xsi:type="null"/>
+                            </item>
+                            <item name="field" xsi:type="string">option_id</item>
+                            <item name="related_tables" xsi:type="array">
+                                <item name="catalog_product_link_attribute_decimal" xsi:type="null"/>
+                                <item name="catalog_product_link_attribute_int" xsi:type="null"/>
+                                <item name="catalog_product_link_attribute_varchar" xsi:type="null"/>
+                            </item>
+                        </item>
+
+                        <item name="catalog_product_relation" xsi:type="array">
+                            <item name="parent_columns" xsi:type="array">
+                                <item name="parent_id" xsi:type="null"/>
+                                <item name="child_id" xsi:type="null"/>
+                            </item>
+                        </item>
+
+                        <item name="catalog_product_super_attribute" xsi:type="array">
+                            <item name="parent_columns" xsi:type="array">
+                                <item name="product_id" xsi:type="null"/>
+                            </item>
+                            <item name="field" xsi:type="string">product_super_attribute_id</item>
+                            <item name="related_tables" xsi:type="array">
+                                <item name="catalog_product_super_attribute_label" xsi:type="null"/>
+                            </item>
+                        </item>
+
+                        <item name="catalog_product_super_link" xsi:type="array">
+                            <item name="parent_columns" xsi:type="array">
+                                <item name="product_id" xsi:type="null"/>
+                                <item name="parent_id" xsi:type="null"/>
+                            </item>
+                        </item>
+
+                        <item name="catalog_product_website" xsi:type="array">
+                            <item name="parent_columns" xsi:type="array">
+                                <item name="product_id" xsi:type="null"/>
+                            </item>
+                        </item>
+
+                        <item name="catalog_url_rewrite_product_category" xsi:type="array">
+                            <item name="parent_columns" xsi:type="array">
+                                <item name="product_id" xsi:type="null"/>
+                            </item>
+                        </item>
+
+                        <!-- product tables -->
+                        <item name="catalog_category_product" xsi:type="array">
+                            <item name="parent_columns" xsi:type="array">
+                                <item name="product_id" xsi:type="null"/>
+                            </item>
+                        </item>
+
+                        <item name="catalog_category_product_index" xsi:type="array">
+                            <item name="parent_columns" xsi:type="array">
+                                <item name="product_id" xsi:type="null"/>
+                            </item>
+                        </item>
+
+                        <item name="catalog_category_product_index_store%" xsi:type="array">
+                            <item name="parent_columns" xsi:type="array">
+                                <item name="product_id" xsi:type="null"/>
+                            </item>
+                        </item>
+
+                        <item name="catalog_product_bundle_price_index" xsi:type="null"/>
+                        <item name="catalog_product_bundle_stock_index" xsi:type="null"/>
+
+                        <item name="cataloginventory_stock_item" xsi:type="array">
+                            <item name="parent_columns" xsi:type="array">
+                                <item name="product_id" xsi:type="null"/>
+                            </item>
+                        </item>
+                        <item name="cataloginventory_stock_status" xsi:type="array">
+                            <item name="parent_columns" xsi:type="array">
+                                <item name="product_id" xsi:type="null"/>
+                            </item>
+                        </item>
+
+                        <item name="catalogrule_product" xsi:type="array">
+                            <item name="parent_columns" xsi:type="array">
+                                <item name="product_id" xsi:type="null"/>
+                            </item>
+                        </item>
+
+                        <item name="catalogrule_product_price" xsi:type="array">
+                            <item name="parent_columns" xsi:type="array">
+                                <item name="product_id" xsi:type="null"/>
+                            </item>
+                        </item>
+                    </item>
+                </item>
+            </argument>
+        </arguments>
+    </virtualType>
+</config>
