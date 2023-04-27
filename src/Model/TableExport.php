@@ -12,7 +12,6 @@ declare(strict_types=1);
 namespace Nanobots\DbDumper\Model;
 
 use Magento\Framework\Exception\FileSystemException;
-use Magento\Framework\Exception\RuntimeException;
 use Nanobots\DbDumper\Export\TableExportInterface;
 use Nanobots\DbDumper\Export\TableFilterInterface;
 use Nanobots\DbDumper\Helper\FileWriter;
@@ -84,21 +83,23 @@ class TableExport implements TableExportInterface
         $bytesWrote = 0;
 
         foreach ($tables as $table) {
-            if ($this->_doesIfTableExists($table) && !isset($this->writeQueries[$table])) {
-                $statement = $this->connection->getCreateTable($table);
-                foreach ($this->createTableModifiers as $createTableModifier) {
-                    $createTableModifier->modifyCreateTableQuery($statement);
+            if ($this->_doesTableExist($table)) {
+                if (!isset($this->writeQueries[$table])) {
+                    $statement = $this->connection->getCreateTable($table);
+                    foreach ($this->createTableModifiers as $createTableModifier) {
+                        $createTableModifier->modifyCreateTableQuery($statement);
+                    }
+
+                    $fileContent = sprintf(
+                        "%s\n%s\n%s;" . PHP_EOL . PHP_EOL,
+                        "-- $table",
+                        "DROP TABLE IF EXISTS $table;",
+                        $statement
+                    );
+
+                    $bytesWrote = $this->fileWriter->writeToFile($fileContent, FILE_APPEND);
+                    $this->writeQueries[$table] = true;
                 }
-
-                $fileContent = sprintf(
-                    "%s\n%s\n%s;" . PHP_EOL . PHP_EOL,
-                    "-- $table",
-                    "DROP TABLE IF EXISTS $table;",
-                    $statement
-                );
-
-                $bytesWrote = $this->fileWriter->writeToFile($fileContent, FILE_APPEND);
-                $this->writeQueries[$table] = true;
             }
 
             $this->logger->warning(__('Table %1 does not exists in the source database. Skipped', $tableName));
@@ -135,48 +136,58 @@ class TableExport implements TableExportInterface
         $tables = $this->_determineMultipleTables($tableName);
 
         foreach ($tables as $table) {
-            $selects = [];
+            if ($this->_doesTableExist($table)) {
+                $selects = [];
 
-            if ($this->connection->isTableAView($table)) {
-                $this->writeCreateViewQuery($table);
-                continue;
-            } else {
-                $this->writeSqlCreateTableQuery($table);
-            }
-            $autoIncrementField = $this->connection->getAutoincrementField($table);
-            $select = $this->getMainSelectWithFilters($table, $useFilters);
+                if ($this->connection->isTableAView($table)) {
+                    $this->writeCreateViewQuery($table);
+                    continue;
+                } else {
+                    $this->writeSqlCreateTableQuery($table);
+                }
+                $autoIncrementField = $this->connection->getAutoincrementField($table);
+                $select = $this->getMainSelectWithFilters($table, $useFilters);
 
-            if (isset($tableData['parent'])) {
-                $relatedColumn = $tableData['parent'];
-            }
+                if (isset($tableData['parent'])) {
+                    $relatedColumn = $tableData['parent'];
+                }
 
-            if ($autoIncrementField) {
-                if ($tableData['field'] ?? null === null && $relatedIds === []) {
-                    if (!$relatedIds) {
-                        $idValueFrom = 0;
-                        $batches = $this->getEntityBatches($autoIncrementField, $table);
+                if ($autoIncrementField) {
+                    if ($tableData['field'] ?? null === null && $relatedIds === []) {
+                        if (!$relatedIds) {
+                            $idValueFrom = 0;
+                            $batches = $this->getEntityBatches($autoIncrementField, $table);
 
-                        foreach ($batches as $batch) {
-                            $batchSelect = clone $select;
-                            $batchSelect
-                                ->where("$autoIncrementField >= ?", $idValueFrom)
-                                ->where("$autoIncrementField < ?", $batch['id_value_to']);
-                            $idValueFrom = $batch['id_value_to'];
+                            foreach ($batches as $batch) {
+                                $batchSelect = clone $select;
+                                $batchSelect
+                                    ->where("$autoIncrementField >= ?", $idValueFrom)
+                                    ->where("$autoIncrementField < ?", $batch['id_value_to']);
+                                $idValueFrom = $batch['id_value_to'];
 
-                            $selects[] = $batchSelect;
+                                $selects[] = $batchSelect;
+                            }
+                        } else {
+                            if (isset($tableData['parent_columns'])) {
+                                foreach ($tableData['parent_columns'] as $relatedColumn => $parentColumn) {
+                                    $select->where("$relatedColumn in (?)", $relatedIds);
+                                }
+                            } else {
+                                $select->where("$relatedColumn in (?)", $relatedIds);
+                            }
+                            $selects[] = $select;
                         }
                     } else {
-                        if (isset($tableData['parent_columns'])) {
+                        if (isset($tableData['parent_columns']) && $relatedIds !== []) {
                             foreach ($tableData['parent_columns'] as $relatedColumn => $parentColumn) {
                                 $select->where("$relatedColumn in (?)", $relatedIds);
                             }
-                        } else {
-                            $select->where("$relatedColumn in (?)", $relatedIds);
                         }
                         $selects[] = $select;
                     }
+
                 } else {
-                    if (isset($tableData['parent_columns']) && $relatedIds !== []) {
+                    if (isset($tableData['parent_columns']) && $relatedIds !== null) {
                         foreach ($tableData['parent_columns'] as $relatedColumn => $parentColumn) {
                             $select->where("$relatedColumn in (?)", $relatedIds);
                         }
@@ -184,34 +195,25 @@ class TableExport implements TableExportInterface
                     $selects[] = $select;
                 }
 
-            } else {
-                if (isset($tableData['parent_columns']) && $relatedIds !== null) {
-                    foreach ($tableData['parent_columns'] as $relatedColumn => $parentColumn) {
-                        $select->where("$relatedColumn in (?)", $relatedIds);
+                foreach ($selects as $select) {
+                    $tableRows = $this->connection->getConnection()->fetchAll($select);
+                    $tableUniqueIds = array_column($tableRows, $tableData['field'] ?? null);
+
+                    if (!empty($tableRows)) {
+                        $this->writeTableRows($tableRows, $table, $anonymize);
+                    }
+
+                    foreach ($tableData['related_tables'] ?? [] as $relatedTableName => $relatedTableData) {
+                        $this->prepareTableDataDump(
+                            $relatedTableName,
+                            $relatedTableData,
+                            $tableData['field'] ?? null,
+                            $tableUniqueIds,
+                            $anonymize // pass from parent table
+                        );
                     }
                 }
-                $selects[] = $select;
             }
-
-            foreach ($selects as $select) {
-                $tableRows = $this->connection->getConnection()->fetchAll($select);
-                $tableUniqueIds = array_column($tableRows, $tableData['field'] ?? null);
-
-                if (!empty($tableRows)) {
-                    $this->writeTableRows($tableRows, $table, $anonymize);
-                }
-
-                foreach ($tableData['related_tables'] ?? [] as $relatedTableName => $relatedTableData) {
-                    $this->prepareTableDataDump(
-                        $relatedTableName,
-                        $relatedTableData,
-                        $tableData['field'] ?? null,
-                        $tableUniqueIds,
-                        $anonymize // pass from parent table
-                    );
-                }
-            }
-
         }
 
         return 0;
@@ -246,7 +248,7 @@ class TableExport implements TableExportInterface
      * @param string $tableName
      * @return bool
      */
-    private function _doesIfTableExists(string $tableName): bool
+    private function _doesTableExist(string $tableName): bool
     {
         return $this->connection->getConnection()->isTableExists($tableName);
     }
