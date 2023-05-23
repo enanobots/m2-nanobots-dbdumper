@@ -24,7 +24,7 @@ So, that is why this module was developed.
 
 Installation is via `composer`
 ```
-composer require enanobots/m2-nanobots-dbdumper
+composer require enanobots/m2-dbdumper
 ```
 
 After installing the packages just run:
